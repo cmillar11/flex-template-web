@@ -14,7 +14,7 @@ import {
 import { handleCardSetup } from '../../ducks/stripe.duck';
 import { isScrollingDisabled } from '../../ducks/UI.duck';
 import {
-  IconClose,
+  SavedCardDetails,
   LayoutSideNavigation,
   LayoutWrapperMain,
   LayoutWrapperSideNav,
@@ -45,6 +45,7 @@ const PaymentMethodsPageComponent = props => {
     onDeletePaymentMethod,
     fetchStripeCustomer,
     scrollingDisabled,
+    onManageDisableScrolling,
     intl,
   } = props;
 
@@ -170,11 +171,6 @@ const PaymentMethodsPageComponent = props => {
     ? ensurePaymentMethodCard(currentUser.stripeCustomer.defaultPaymentMethod).attributes.card
     : null;
 
-  const paymentMethodPlaceholder = intl.formatMessage(
-    { id: 'PaymentMethodsPage.savedPaymentMethodPlaceholder' },
-    { lastFour: card.last4digits }
-  );
-
   return (
     <Page title={title} scrollingDisabled={scrollingDisabled}>
       <LayoutSideNavigation>
@@ -193,18 +189,13 @@ const PaymentMethodsPageComponent = props => {
               <FormattedMessage id="PaymentMethodsPage.heading" />
             </h1>
             {hasDefaultPaymentMethod ? (
-              <div onClick={handleRemovePaymentMethod} style={{ cursor: 'pointer' }}>
-                <div className={css.savedPaymentMethod}>
-                  <span className={css.savedPaymentMethodTitle}>
-                    <FormattedMessage id="PaymentMethodsPage.savedPaymentMethodTitle" />
-                  </span>
-                  <p>{paymentMethodPlaceholder}</p>
-                </div>
-                <div className={css.savedPaymentMethodDelete}>
-                  <IconClose rootClassName={css.closeIcon} size="small" />
-                  <FormattedMessage id="PaymentMethodsPage.deletePaymentMethod" />
-                </div>
-              </div>
+              <SavedCardDetails
+                intl={intl}
+                card={card}
+                //onUpdateCard={/*some func*/}
+                onDeleteCard={handleRemovePaymentMethod}
+                onManageDisableScrolling={onManageDisableScrolling}
+              />
             ) : (
               <PaymentMethodsForm
                 className={css.paymentForm}
