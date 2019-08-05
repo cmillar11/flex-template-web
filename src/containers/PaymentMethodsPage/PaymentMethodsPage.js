@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { bool, func, object } from 'prop-types';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
@@ -31,12 +31,15 @@ import { createStripeSetupIntent, stripeCustomer, loadData } from './PaymentMeth
 import css from './PaymentMethodsPage.css';
 
 const PaymentMethodsPageComponent = props => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
     currentUser,
     addPaymentMethodError,
     deletePaymentMethodError,
     createStripeCustomerError,
     handleCardSetupError,
+    deletePaymentMethodInProgress,
     onCreateSetupIntent,
     onHandleCardSetup,
     onCreateStripeCustomer,
@@ -49,66 +52,77 @@ const PaymentMethodsPageComponent = props => {
     intl,
   } = props;
 
+  const getClientSecret = setupIntent => {
+    return setupIntent && setupIntent.attributes ? setupIntent.attributes.clientSecret : null;
+  };
+  const getPaymentParams = (currentUser, formValues) => {
+    const { name, addressLine1, addressLine2, postal, state, city, country } = formValues;
+    const addressMaybe =
+      addressLine1 && postal
+        ? {
+            address: {
+              city: city,
+              country: country,
+              line1: addressLine1,
+              line2: addressLine2,
+              postal_code: postal,
+              state: state,
+            },
+          }
+        : {};
+    const billingDetails = {
+      name,
+      email: ensureCurrentUser(currentUser).attributes.email,
+      ...addressMaybe,
+    };
+
+    const paymentParams = {
+      payment_method_data: {
+        billing_details: billingDetails,
+      },
+    };
+
+    return paymentParams;
+  };
+
   const handleSubmit = params => {
+    setIsSubmitting(true);
     const ensuredCurrentUser = ensureCurrentUser(currentUser);
     const stripeCustomer = ensuredCurrentUser.stripeCustomer;
     const hasSavedPaymentMethod = stripeCustomer ? stripeCustomer.defaultPaymentMethod : null;
 
     const { stripe, card, formValues } = params;
 
-    onCreateSetupIntent().then(setupIntent => {
-      const setupIntentClientSecret =
-        setupIntent && setupIntent.attributes ? setupIntent.attributes.clientSecret : null;
-      const { name, addressLine1, addressLine2, postal, state, city, country } = formValues;
-      const addressMaybe =
-        addressLine1 && postal
-          ? {
-              address: {
-                city: city,
-                country: country,
-                line1: addressLine1,
-                line2: addressLine2,
-                postal_code: postal,
-                state: state,
-              },
-            }
-          : {};
-      const billingDetails = {
-        name,
-        email: ensureCurrentUser(currentUser).attributes.email,
-        ...addressMaybe,
-      };
+    onCreateSetupIntent()
+      .then(setupIntent => {
+        const stripeParams = {
+          stripe,
+          card,
+          setupIntentClientSecret: getClientSecret(setupIntent),
+          paymentParams: getPaymentParams(currentUser, formValues),
+        };
 
-      const paymentParams = {
-        payment_method_data: {
-          billing_details: billingDetails,
-        },
-      };
+        return onHandleCardSetup(stripeParams);
+      })
+      .then(result => {
+        const newPaymentMethod = result.setupIntent.payment_method;
+        // Note: stripe.handleCardSetup might return an error inside successful call (200), but those are rejected in thunk functions.
 
-      const stripeParams = { stripe, card, setupIntentClientSecret, paymentParams };
-
-      onHandleCardSetup(stripeParams)
-        .then(result => {
-          console.log('Result', result);
-
-          const setupIntent = result ? result.setupIntent : null;
-          const paymentMethodId = setupIntent ? setupIntent.payment_method : null;
-
-          if (result.error) {
-            return;
-          }
-          if (!stripeCustomer) {
-            return onCreateStripeCustomer(paymentMethodId);
-          } else if (!hasSavedPaymentMethod) {
-            return onAddPaymentMethod(paymentMethodId);
-          } else {
-            return onUpdatePaymentMethod(paymentMethodId);
-          }
-        })
-        .then(result => {
-          fetchStripeCustomer();
-        });
-    });
+        return !stripeCustomer
+          ? onCreateStripeCustomer(newPaymentMethod)
+          : hasSavedPaymentMethod
+          ? onUpdatePaymentMethod(newPaymentMethod)
+          : onAddPaymentMethod(newPaymentMethod);
+      })
+      .then(() => {
+        // Update currentUser entity and its sub entities: stripeCustomer and defaultPaymentMethod
+        fetchStripeCustomer();
+        setIsSubmitting(false);
+      })
+      .catch(error => {
+        console.error(error);
+        setIsSubmitting(false);
+      });
   };
 
   const handleRemovePaymentMethod = () => {
@@ -160,7 +174,7 @@ const PaymentMethodsPageComponent = props => {
       }`
     : null;
 
-  const initalValuesForStripePayment = { name: userName, country: 'FI' };
+  const initalValuesForStripePayment = { name: userName };
 
   const hasDefaultPaymentMethod =
     currentUser &&
@@ -194,6 +208,7 @@ const PaymentMethodsPageComponent = props => {
                 card={card}
                 //onUpdateCard={/*some func*/}
                 onDeleteCard={handleRemovePaymentMethod}
+                inProgress={deletePaymentMethodInProgress}
                 onManageDisableScrolling={onManageDisableScrolling}
               />
             ) : (
@@ -208,6 +223,7 @@ const PaymentMethodsPageComponent = props => {
                 deletePaymentMethodError={deletePaymentMethodError}
                 createStripeCustomerError={createStripeCustomerError}
                 handleCardSetupError={handleCardSetupError}
+                inProgress={isSubmitting}
               />
             )}
           </div>
@@ -251,6 +267,7 @@ const mapStateToProps = state => {
   const { currentUser } = state.user;
 
   const {
+    deletePaymentMethodInProgress,
     addPaymentMethodError,
     deletePaymentMethodError,
     createStripeCustomerError,
@@ -260,6 +277,7 @@ const mapStateToProps = state => {
   return {
     currentUser,
     scrollingDisabled: isScrollingDisabled(state),
+    deletePaymentMethodInProgress,
     addPaymentMethodError,
     deletePaymentMethodError,
     createStripeCustomerError,
