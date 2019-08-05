@@ -1,0 +1,65 @@
+@import '../../marketplace.css';
+
+.savedPaymentMethodTitle {
+  @apply --marketplaceH4FontStyles;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.closeIcon {
+  @apply --marketplaceModalCloseIcon;
+  margin-right: 5px;
+}
+
+.expirationDate {
+  padding-left: 24px;
+}
+
+.savedPaymentMethodDelete {
+  @apply --marketplaceH4FontStyles;
+  color: var(--matterColorAnti);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--matterColor);
+  }
+}
+
+.modalButtonsWrapper {
+  padding-top: 80px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+}
+
+/* Title of the modal */
+.modalTitle {
+  @apply --marketplaceModalTitleStyles;
+  padding-top: 36px;
+}
+
+/* Paragraph for the Modal */
+.modalMessage {
+  @apply --marketplaceModalParagraphStyles;
+  min-height: 200px;
+}
+
+.cancelCardDelete {
+  color: var(--matterColorAnti);
+  cursor: pointer;
+  width: 50%;
+  text-align: right;
+  padding-right: 64px;
+
+  &:hover {
+    color: var(--matterColor);
+  }
+}
+
+.savedPaymentMethodExpired {
+  color: var(--failColor);
+}
+
+.cardExpiredText {
+  @apply --marketplaceH4FontStyles;
+}
