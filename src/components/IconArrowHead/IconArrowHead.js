@@ -6,6 +6,8 @@ import css from './IconArrowHead.css';
 
 const DIRECTION_RIGHT = 'right';
 const DIRECTION_LEFT = 'left';
+const DIRECTION_UP = 'up';
+const DIRECTION_DOWN = 'down';
 const SIZE_BIG = 'big';
 const SIZE_SMALL = 'small';
 
@@ -15,6 +17,8 @@ const IconArrowHead = props => {
 
   const isRight = direction === DIRECTION_RIGHT;
   const isLeft = direction === DIRECTION_LEFT;
+  const isUp = direction === DIRECTION_UP;
+  const isDown = direction === DIRECTION_DOWN;
   const isBig = size === SIZE_BIG;
   const isSmall = size === SIZE_SMALL;
 
@@ -78,6 +82,24 @@ const IconArrowHead = props => {
         />
       </svg>
     );
+  } else if (isDown) {
+    return (
+      <svg className={classes} width="16" height="10" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M8.55 1.227a.778.778 0 0 0-1.1 0L1.228 7.45a.777.777 0 1 0 1.1 1.1L8 2.877l5.672 5.671a.777.777 0 1 0 1.1-1.1L8.55 1.228z"
+          fillRule="evenodd"
+        />
+      </svg>
+    );
+  } else if (isUp) {
+    return (
+      <svg className={classes} width="16" height="10" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M7.45 8.55a.778.778 0 0 0 1.1 0l6.222-6.222a.777.777 0 1 0-1.1-1.1L8 6.9 2.328 1.23a.777.777 0 1 0-1.1 1.1L7.45 8.55z"
+          fillRule="evenodd"
+        />
+      </svg>
+    );
   }
 };
 
@@ -90,7 +112,7 @@ IconArrowHead.defaultProps = {
 IconArrowHead.propTypes = {
   className: string,
   rootClassName: string,
-  direction: oneOf([DIRECTION_RIGHT, DIRECTION_LEFT]).isRequired,
+  direction: oneOf([DIRECTION_RIGHT, DIRECTION_LEFT, DIRECTION_DOWN, DIRECTION_UP]).isRequired,
   size: oneOf([SIZE_BIG, SIZE_SMALL]),
 };
 
